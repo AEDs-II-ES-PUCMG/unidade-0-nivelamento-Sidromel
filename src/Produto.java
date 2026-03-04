@@ -1,19 +1,12 @@
 import java.text.NumberFormat;
 
-public class Produto {
+public abstract class Produto {
 	
 	private static final double MARGEM_PADRAO = 0.2;
-	private String descricao;
-	private double precoCusto;
-	private double margemLucro;
+	protected String descricao;
+	protected double precoCusto;
+	protected double margemLucro;
 	
-	/**
-     * Inicializador privado. Os valores default, em caso de erro, são:
-     * "Produto sem descrição", R$ 0.00, 0.0  
-     * @param desc Descrição do produto (mínimo de 3 caracteres)
-     * @param precoCusto Preço do produto (mínimo 0.01)
-     * @param margemLucro Margem de lucro (mínimo 0.01)
-     */
 	private void init(String desc, double precoCusto, double margemLucro) {
 		
 		if ((desc.length() >= 3) && (precoCusto > 0.0) && (margemLucro > 0.0)) {
@@ -24,47 +17,72 @@ public class Produto {
 			throw new IllegalArgumentException("Valores inválidos para os dados do produto.");
 		}
 	}
-	
-	/**
-     * Construtor completo. Os valores default, em caso de erro, são:
-     * "Produto sem descrição", R$ 0.00, 0.0  
-     * @param desc Descrição do produto (mínimo de 3 caracteres)
-     * @param precoCusto Preço do produto (mínimo 0.01)
-     * @param margemLucro Margem de lucro (mínimo 0.01)
-     */
-	public Produto(String desc, double precoCusto, double margemLucro) {
+
+	protected Produto(String desc, double precoCusto, double margemLucro) {
 		init(desc, precoCusto, margemLucro);
 	}
 	
-	/**
-     * Construtor sem margem de lucro - fica considerado o valor padrão de margem de lucro.
-     * Os valores default, em caso de erro, são:
-     * "Produto sem descrição", R$ 0.00 
-     * @param desc Descrição do produto (mínimo de 3 caracteres)
-     * @param precoCusto Preço do produto (mínimo 0.01)
-     */
-	public Produto(String desc, double precoCusto) {
+	protected Produto(String desc, double precoCusto) {
 		init(desc, precoCusto, MARGEM_PADRAO);
 	}
 	
-	 /**
-     * Retorna o valor de venda do produto, considerando seu preço de custo e margem de lucro.
-     * @return Valor de venda do produto (double, positivo)
-     */
-	public double valorDeVenda() {
+	public double valorVenda() {
 		return (precoCusto * (1.0 + margemLucro));
 	}
-	
-	/**
-     * Descrição, em string, do produto, contendo sua descrição e o valor de venda.
-     *  @return String com o formato:
-     * [NOME]: R$ [VALOR DE VENDA]
-     */
+
+	public String getDescricao() {
+		return descricao;
+	}
+
+	public double getPrecoCusto() {
+		return precoCusto;
+	}
+
+	public double getMargemLucro() {
+		return margemLucro;
+	}
+
     @Override
 	public String toString() {
     	
     	NumberFormat moeda = NumberFormat.getCurrencyInstance();
     	
-		return String.format("NOME: " + descricao + ": " + moeda.format(valorDeVenda()));
+		return String.format("NOME: " + descricao + ": " + moeda.format(valorVenda()));
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (obj == null || getClass() != obj.getClass()) return false;
+		Produto outro = (Produto) obj;
+		return this.descricao.toLowerCase().equals(outro.descricao.toLowerCase());
+	}
+
+	public abstract String gerarDadosTexto();
+
+	public static Produto criarDoTexto(String linha) {
+		if (linha == null || linha.isBlank()) {
+			throw new IllegalArgumentException("Linha de dados inválida.");
+		}
+		String[] partes = linha.split(";");
+		if (partes.length < 4) {
+			throw new IllegalArgumentException("Linha com dados insuficientes.");
+		}
+		String tipo = partes[0].trim();
+		String descricao = partes[1].trim();
+		double precoCusto = Double.parseDouble(partes[2].trim());
+		double margemLucro = Double.parseDouble(partes[3].trim());
+
+		if ("1".equals(tipo)) {
+			return new ProdutoNaoPerecivel(descricao, precoCusto, margemLucro);
+		} else if ("2".equals(tipo)) {
+			if (partes.length < 5) {
+				throw new IllegalArgumentException("Produto perecível exige data de validade.");
+			}
+			String dataValidade = partes[4].trim();
+			return ProdutoPerecivel.criarDoArquivo(descricao, precoCusto, margemLucro, dataValidade);
+		} else {
+			throw new IllegalArgumentException("Tipo de produto inválido: " + tipo);
+		}
 	}
 }
