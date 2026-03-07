@@ -6,6 +6,7 @@ public abstract class Produto {
 	protected String descricao;
 	protected double precoCusto;
 	protected double margemLucro;
+	protected int quantidadeEmEstoque;
 	
 	private void init(String desc, double precoCusto, double margemLucro) {
 		
@@ -42,12 +43,24 @@ public abstract class Produto {
 		return margemLucro;
 	}
 
+	public int getQuantidadeEmEstoque() {
+		return quantidadeEmEstoque;
+	}
+
+	public int reduzirEstoque (int quantidadeEmEstoque) {
+		if (pedido(quantidadeEmEstoque) == true) {
+			quantidadeEmEstoque -= quantidadeEmEstoque;
+		} else {
+			throw new IllegalArgumentException("O estoque do produto acabou");
+		}
+	}
+
     @Override
 	public String toString() {
     	
     	NumberFormat moeda = NumberFormat.getCurrencyInstance();
     	
-		return String.format("NOME: " + descricao + ": " + moeda.format(valorVenda()));
+		return String.format("NOME: " + descricao + ": " + moeda.format(valorVenda()) + "Em estoque:" + quantidadeEmEstoque);
 	}
 
 	@Override
